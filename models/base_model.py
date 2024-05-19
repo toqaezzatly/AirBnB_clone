@@ -1,6 +1,8 @@
 #!/usr/bin/python3
+
 import uuid
 from datetime import datetime
+from models import storage
 
 class BaseModel:
     """
@@ -12,13 +14,25 @@ class BaseModel:
         updated_at (datetime): The datetime when the instance was last updated.
     """
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """
         Initializes a new instance of BaseModel.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
         """
-        self.id = str(uuid.uuid4())
-        self.created_at = datetime.now()
-        self.updated_at = self.created_at
+        if kwargs:
+            for key, value in kwargs.items():
+                if key == "created_at" or key == "updated_at":
+                    value = datetime.fromisoformat(value)
+                if key != "__class__":
+                    setattr(self, key, value)
+        else:
+            self.id = str(uuid.uuid4())
+            self.created_at = datetime.now()
+            self.updated_at = self.created_at
+            storage.new(self)
 
     def __str__(self):
         """
@@ -28,9 +42,11 @@ class BaseModel:
 
     def save(self):
         """
-        Updates the public instance attribute `updated_at` with the current datetime.
+        Updates the public instance attribute `updated_at` with the current datetime
+        and calls the save() method of storage.
         """
         self.updated_at = datetime.now()
+        storage.save()
 
     def to_dict(self):
         """
